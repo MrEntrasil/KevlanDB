@@ -1,6 +1,17 @@
 local os = require"os"
 local io = require"io"
+local uuid = require"uuid"
 local Collection = require"storage.collection"
+
+local function split(str, delimiter)
+	delimiter = delimiter or " "
+	local result = {}
+
+	for part in str:gmatch("([^" .. delimiter .. "]+)") do
+		table.insert(result, part)
+	end
+	return result
+end
 
 local function decode_document(doc)
 	local parts = {}
@@ -8,9 +19,9 @@ local function decode_document(doc)
 		key = key:gsub("^%s*(.-)%s*$", "%1")
 		value = value:gsub("^%s*(.-)%s*$", "%1")
 		if value:match'^".*"$' then
-			parts[key] = value:gsub(2, -2)
+			parts[key] = value:sub(2, -2)
 		elseif value:match"^'.*'$" then
-			parts[key] = value:gsub(2, -2)
+			parts[key] = value:sub(2, -2)
 		elseif value:match"^%d+$" then
 			parts[key] = tonumber(value)
 		elseif value:match"^%d+%.%d+$" then
@@ -32,6 +43,8 @@ local function encode_document(doc)
 		if type(value) == "string" then
 			table.insert(parts, string.format('%s="%s"', key, value:gsub('"', '\\"')))
 		elseif type(value) == "boolean" then
+			table.insert(parts, string.format("%s=%s", key, tostring(value)))
+		elseif type(value) == "number" then
 			table.insert(parts, string.format("%s=%s", key, tostring(value)))
 		elseif type(value) == "table" then
 			if #value > 0 then
@@ -57,8 +70,7 @@ KV.__index = KV
 function KV:new(filename)
 	local obj = setmetatable({
 			filename = filename or "kv_store.db",
-			collections = {},
-			alwaysSave = true
+			collections = {}
 		}, self)
 	obj:load()
 	return obj
@@ -68,9 +80,16 @@ function KV:load()
 	local file = io.open(self.filename, "r")
 	if file then
 		for line in file:lines() do
-			local collection, id, data = line:match"^(%w+)|(%d+)|(.+)$"
-			self.collections[collection] = {}
-			self.collections[collection][tonumber(id)] = decode_document(data)
+			local splited = split(line, "|")
+			local collection, uuid, data = splited[1], splited[2], splited[3]
+			if not collection or not uuid or not data then
+				print"[ERROR]: not collection or not uuid or not data found!"
+				os.exit(1)
+			end
+			if not self.collections[collection] then
+				self.collections[collection] = {}
+			end
+			self.collections[collection][uuid] = decode_document(data)
 		end
 		file:close()
 	else
@@ -84,7 +103,7 @@ function KV:save()
 	if file then
 		for collname, collection in pairs(self.collections) do
 			for id, doc in pairs(collection) do
-				file:write(string.format("%s|%d|%s\n", collname, id, encode_document(doc)))
+				file:write(string.format("%s|%s|%s\n", collname, id, encode_document(doc)))
 			end
 		end
 		file:close()
