@@ -9,14 +9,6 @@ function Collection:insert(document)
 	return document
 end
 
-function Collection:find(uuid)
-	local document = self.data[uuid]
-	if document then
-		return document
-	end
-	return false
-end
-
 function Collection:find_where(query)
 	local results = {}
 	for _, document in pairs(self.data) do

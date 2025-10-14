@@ -1,7 +1,7 @@
 local os = require"os"
 local io = require"io"
-local uuid = require"uuid"
 local Collection = require"storage.collection"
+local FileReader = require"storage.filereader"
 
 local function split(str, delimiter)
 	delimiter = delimiter or " "
@@ -67,43 +67,41 @@ end
 local KV = {}
 KV.__index = KV
 
-function KV:new(filename)
+function KV:new(filename, options)
 	local obj = setmetatable({
+			version = "1.0",
 			filename = filename or "kv_store.db",
-			collections = {}
+			collections = {},
+			reader = FileReader:new(filename or "kv_store.db")
 		}, self)
 	obj:load()
 	return obj
 end
 
 function KV:load()
-	local file = io.open(self.filename, "r")
-	if file then
-		for line in file:lines() do
-			local splited = split(line, "|")
-			local collection, uuid, data = splited[1], splited[2], splited[3]
-			if not collection or not uuid or not data then
-				print"[ERROR]: not collection or not uuid or not data found!"
-				os.exit(1)
-			end
-			if not self.collections[collection] then
-				self.collections[collection] = {}
-			end
-			self.collections[collection][uuid] = decode_document(data)
+	local result = self.reader:parse()
+	for _, dat in ipairs(result.data) do
+		local collection, uuid, data = dat[1], dat[2], dat[3]
+		if not self.collections[collection] then
+			self.collections[collection] = {}
 		end
-		file:close()
-	else
-		return false, "[WARNING]: Couldnt load object of '"..self.filename.."'"
+		self.collections[collection][uuid] = decode_document(data)
 	end
+	self.created = result.headers.created or os.time()
 	return true
 end
 
 function KV:save()
 	local file = io.open(self.filename, "w")
 	if file then
+		file:write"[HEADER]\n"
+		file:write("db: KVDB "..self.version.."\n")
+		file:write("created: "..self.created.."\n")
+		file:write("modified: "..os.time().."\n")
+		file:write"[DATA]\n"
 		for collname, collection in pairs(self.collections) do
-			for id, doc in pairs(collection) do
-				file:write(string.format("%s|%s|%s\n", collname, id, encode_document(doc)))
+			for uuid, doc in pairs(collection) do
+				file:write(string.format("%s|%s|%s\n", collname, uuid, encode_document(doc)))
 			end
 		end
 		file:close()
