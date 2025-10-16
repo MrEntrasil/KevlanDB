@@ -1,8 +1,12 @@
 return function()
-	local base = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"
-	math.randomseed(os.time())
+	local base = "xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx"
+	local chars = "0123456789abcdef"
 	return string.gsub(base, "[xy]", function(c)
-		local v = (c == "x") and math.random(0, 0xf) or math.random(8, 0xb)
-		return string.format("%x", v)
+		math.randomseed(os.time()+os.clock()*1000000)
+		if c == "x" then
+			return chars:sub(math.random(1, 16), math.random(1, 16))
+		else
+			return chars:sub(math.random(9, 12), math.random(9, 12))
+		end
 	end)
 end

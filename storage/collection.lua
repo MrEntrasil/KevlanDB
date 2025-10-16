@@ -32,4 +32,10 @@ function Collection:find(uuid)
 	return false
 end
 
+function Collection:flush()
+	self.data = {}
+	self.db.collections[self.name] = {}
+	self.db:save()
+end
+
 return Collection

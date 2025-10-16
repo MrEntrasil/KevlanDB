@@ -1,7 +1,0 @@
-[HEADER]
-db: KVDB 1.0
-created:  1760485256
-modified: 1760485307
-[DATA]
-marcas|965988d4-57e6-4934-9c57-8626915f83d7|nome="Arm";presta=true;_uuid="965988d4-57e6-4934-9c57-8626915f83d7"
-marcas|1d5474ec-eb66-416f-b193-b83fc08c5dcc|nome="Arm";_uuid="1d5474ec-eb66-416f-b193-b83fc08c5dcc";presta=true

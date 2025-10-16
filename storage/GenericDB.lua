@@ -92,7 +92,7 @@ function KV:load()
 end
 
 function KV:save()
-	local file = io.open(self.filename, "w")
+	local file = io.open(self.filename, "wb")
 	if file then
 		file:write"[HEADER]\n"
 		file:write("db: KVDB "..self.version.."\n")
@@ -100,7 +100,9 @@ function KV:save()
 		file:write("modified: "..os.time().."\n")
 		file:write"[DATA]\n"
 		for collname, collection in pairs(self.collections) do
+			print("Colecao: "..collname)
 			for uuid, doc in pairs(collection) do
+				print("UUID: "..uuid, "DOC: "..tostring(doc))
 				file:write(string.format("%s|%s|%s\n", collname, uuid, encode_document(doc)))
 			end
 		end

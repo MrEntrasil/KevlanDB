@@ -22,7 +22,7 @@ function FileReader:new(filename)
 end
 
 function FileReader:load()
-	local file = io.open(self.filename, "r")
+	local file = io.open(self.filename, "rb")
 	if not file then
 		return false, "[KevlanDB][FileReader]: Couldnt load object of '"..self.filename.."'"
 	end
